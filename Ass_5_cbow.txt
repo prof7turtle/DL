@@ -1,0 +1,48 @@
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, Lambda, Dense
+
+# 1. Input text
+text = "I love deep learning and artificial intelligence"
+
+words = text.lower().split()
+vocab = sorted(set(words))
+
+word_to_id = {w:i for i,w in enumerate(vocab)}
+id_to_word = {i:w for w,i in word_to_id.items()}
+
+# 2. Generate context and target words
+X, Y = [], []
+
+for i in range(1, len(words)-1):
+    X.append([word_to_id[words[i-1]],
+              word_to_id[words[i+1]]])
+    Y.append(word_to_id[words[i]])
+
+X = np.array(X)
+Y = np.array(Y)
+
+# 3. Create CBOW model
+model = Sequential([
+    Embedding(len(vocab), 10),
+    Lambda(lambda x: tf.reduce_mean(x, axis=1)),
+    Dense(len(vocab), activation='softmax')
+])
+
+# 4. Compile model
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# 5. Train model
+model.fit(X, Y, epochs=100, verbose=0)
+
+# 6. Predict target word
+prediction = model.predict(X[:1], verbose=0)
+word_id = np.argmax(prediction)
+
+print("Predicted word:", id_to_word[word_id])
